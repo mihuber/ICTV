@@ -1,0 +1,64 @@
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(kableExtra)
+
+master_list <- read_excel("/Users/huber.michael/Desktop/ICTV/ICTV Master Species List 2018b.v1.xlsx", 
+                          sheet = "ICTV 2018b Master Species #34") %>%
+    filter(`Type Species?` == 1) %>%
+    mutate(genome = substr(`Genome Composition`, 3, 5)) %>%
+    arrange(genome, `Genome Composition`, Order, Family, Genus) %>%
+    select(`Genome Composition`, Order, Family, Genus, Species) %>%
+    rename(`Type Species` = Species) %>%
+    rename(Genome = `Genome Composition`) %>%
+    mutate(Order = ifelse(is.na(Order), "Unassigned", Order)) %>%
+    mutate(Family = ifelse(is.na(Family), "Unassigned", Family)) %>%
+    mutate(Genome = ifelse(Genome == "dsDNA-RT", "dsDNA_RT", Genome)) %>%
+    mutate(Genome = ifelse(Genome == "ssRNA-RT", "ssRNA_RT", Genome))
+
+l = nrow(master_list)
+genome_i = master_list$Genome[1]
+order_i = master_list$Order[1]
+family_i = master_list$Family[1]
+
+for (i in 2:l) {
+
+    if (master_list$Genome[i] == genome_i) {
+        master_list$Genome[i] = ""
+        if (master_list$Order[i] == order_i) {
+            master_list$Order[i] = ""
+            } else {
+            order_i = master_list$Order[i]
+            }
+    } else {
+        genome_i = master_list$Genome[i]
+        order_i = master_list$Order[i]
+    }
+
+    # if (master_list$Order[i] == order_i) {
+    #     master_list$Order[i] = ""
+    # } else {
+    #     order_i = master_list$Order[i]
+    # }
+
+    if (master_list$Family[i] == family_i) {
+        master_list$Family[i] = ""
+    } else {
+        family_i = master_list$Family[i]
+    }
+}
+
+master_list
+
+kable(master_list) %>%
+    kable_styling(font_size = 12) %>%
+    kable_styling(full_width = F, fixed_thead = T)
+
+
+kable(master_list, align = "l") %>%
+    kable_styling(full_width = F, fixed_thead = T, latex_options = "scale_down") %>%
+    column_spec(1, bold = T, border_right = T) %>%
+    column_spec(2, bold = T, border_right = T) %>%
+    column_spec(3, bold = T, border_right = T) %>%
+    collapse_rows(columns = 1:3, valign = "top")
+
